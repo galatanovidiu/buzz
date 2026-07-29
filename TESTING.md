@@ -16,6 +16,19 @@ just test               # unit + integration (starts Docker if needed)
 cargo test -p buzz-test-client -- --ignored
 ```
 
+> **`--ignored` tests write to a real database.** They resolve
+> `BUZZ_TEST_DATABASE_URL`, then `DATABASE_URL`, then a `localhost:5432`
+> default. The `buzz-db` migration tests reset the `public` schema of
+> whatever they resolve to, so point them at a throwaway database rather
+> than a stack you care about:
+>
+> ```bash
+> BUZZ_TEST_DATABASE_URL=postgres://buzz:buzz_dev@localhost:5432/buzz_test \
+>   cargo test -p buzz-db --lib -- --ignored
+> ```
+>
+> `buzz-test-client` reads `DATABASE_URL` only.
+
 ---
 
 ## Live Local Relay
@@ -284,6 +297,14 @@ out of the box with `just setup` or `just relay`. Common overrides:
 | `BUZZ_ALLOW_NIP_OA_AUTH`        | `false`                     | Enable NIP-OA owner attestation for membership |
 | `BUZZ_WEB_DIR`                  | unset (source), `/srv/buzz/web` (container) | Directory containing the invite landing bundle; the production container enables it so `/invite/{code}` always works |
 | `BUZZ_SERVE_GIT_WEB_GUI`        | `false`                     | Set to `true` or `1` to expose the bundled Git repository browser at `/` and `/repos/...`; invite routes do not depend on this flag |
+
+Test-harness variables, read by the scripts and the DB-backed test modules
+rather than by the relay itself:
+
+| Variable                 | Default  | Notes |
+|--------------------------|----------|-------|
+| `BUZZ_DB_PORT`           | `5432`   | Host port the `buzz-postgres` container publishes. Read by `scripts/start-relay-for-tests.sh` and `scripts/setup-desktop-test-data.sh`. Set it when something else already owns `5432`, and publish the container on the matching port. |
+| `BUZZ_TEST_DATABASE_URL` | unset    | Full connection URL for `#[ignore = "requires Postgres"]` tests. Takes precedence over `DATABASE_URL`; both fall back to the module's built-in `localhost:5432` default. |
 
 CLI-side, only two matter for testing:
 

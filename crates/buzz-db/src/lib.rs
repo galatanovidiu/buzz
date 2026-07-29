@@ -3996,8 +3996,9 @@ mod tests {
     const TEST_DB_URL: &str = "postgres://buzz:buzz_dev@localhost:5432/buzz";
 
     async fn setup_db() -> Db {
-        let database_url =
-            std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| TEST_DB_URL.into());
+        let database_url = std::env::var("BUZZ_TEST_DATABASE_URL")
+            .or_else(|_| std::env::var("DATABASE_URL"))
+            .unwrap_or_else(|_| TEST_DB_URL.into());
         let pool = PgPool::connect(&database_url)
             .await
             .expect("connect to test DB");
@@ -4715,8 +4716,9 @@ mod tests {
     #[tokio::test]
     #[ignore = "requires Postgres"]
     async fn test_usage_metrics_lock_has_single_owner_and_releases_on_drop() {
-        let database_url =
-            std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| TEST_DB_URL.into());
+        let database_url = std::env::var("BUZZ_TEST_DATABASE_URL")
+            .or_else(|_| std::env::var("DATABASE_URL"))
+            .unwrap_or_else(|_| TEST_DB_URL.into());
         let pool = PgPoolOptions::new()
             .max_connections(2)
             .connect(&database_url)
@@ -5289,7 +5291,9 @@ mod tests {
     // the query instead of trusting the routing code's word for it.
 
     async fn admin_url() -> String {
-        std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| TEST_DB_URL.into())
+        std::env::var("BUZZ_TEST_DATABASE_URL")
+            .or_else(|_| std::env::var("DATABASE_URL"))
+            .unwrap_or_else(|_| TEST_DB_URL.into())
     }
 
     /// Create a fresh scratch database on the same server and run migrations.

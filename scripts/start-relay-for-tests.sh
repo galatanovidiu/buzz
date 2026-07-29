@@ -25,6 +25,9 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 CARGO_PROFILE="${CARGO_PROFILE:-ci}"
 SKIP_BUILD=false
+# Host port the buzz-postgres container publishes. Overridable for machines
+# where something else already owns 5432 (same knob as setup-desktop-test-data.sh).
+DB_PORT="${BUZZ_DB_PORT:-5432}"
 
 # ── Parse args ────────────────────────────────────────────────────────────────
 
@@ -90,7 +93,7 @@ wait_healthy "MinIO" "buzz-minio"
 
 log "Applying database schema..."
 export PGHOST=localhost
-export PGPORT=5432
+export PGPORT="${DB_PORT}"
 export PGUSER=buzz
 export PGPASSWORD=buzz_dev
 export PGDATABASE=buzz
@@ -98,7 +101,7 @@ export PGDATABASE=buzz
 # Use the already-running docker postgres for desired-state planning instead of
 # downloading an embedded Postgres from Maven Central (transient-fetch flake source).
 export PGSCHEMA_PLAN_HOST=localhost
-export PGSCHEMA_PLAN_PORT=5432
+export PGSCHEMA_PLAN_PORT="${DB_PORT}"
 export PGSCHEMA_PLAN_DB=buzz
 export PGSCHEMA_PLAN_USER=buzz
 export PGSCHEMA_PLAN_PASSWORD=buzz_dev
@@ -152,7 +155,7 @@ fi
 
 log "Starting relay..."
 nohup env \
-  DATABASE_URL=postgres://buzz:buzz_dev@localhost:5432/buzz \
+  DATABASE_URL="postgres://buzz:buzz_dev@localhost:${DB_PORT}/buzz" \
   REDIS_URL=redis://localhost:6379 \
   RELAY_URL=ws://localhost:3000 \
   BUZZ_BIND_ADDR=0.0.0.0:3000 \
